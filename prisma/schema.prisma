@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  username     String       @unique @map("username")
+  name         String?      @map("name")
+  passwordHash String       @map("password_hash")
+  email        String
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  tarrifId     Int?         @map("tarrif_id")
+  logs         Log[]
+  purchase     Purchase[]
+  roles        UserRole[]
+  tarrif       Tarrif?      @relation(fields: [tarrifId], references: [id])
+  clients      UserClient[]
+
+  @@map("users")
+}
+
+model Role {
+  id          Int        @id @default(autoincrement()) @map("id")
+  roleName    String     @map("role_name") /// admin, manager, user
+  description String?    @map("description")
+  userRole    UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId Int @map("user_id")
+  roleId Int @map("role_id")
+  role   Role @relation(fields: [roleId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model Client {
+  id                 Int          @id @default(autoincrement()) @map("id")
+  name               String?      @map("name")
+  phone              String       @map("phone")
+  email              String?      @map("email")
+  birthDate          DateTime?    @map("birth_date")
+  cashbackPercentage Int          @default(0) @map("cashback_percentage")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+  purchase           Purchase[]
+  userClient         UserClient[]
+  visits             Visit[]
+  cashBackTransaction CashBackTransaction[]
+
+  @@map("clients")
+}
+
+model UserClient {
+  userId   Int @map("user_id")
+  clientId Int @map("client_id")
+  client   Client @relation(fields: [clientId], references: [id])
+  user     User   @relation(fields: [userId], references: [id])
+
+  @@id([userId, clientId])
+  @@map("user_clients")
+}
+
+model Purchase {
+  id        Int      @id @default(autoincrement()) @map("id")
+  userId    Int      @map("user_id")
+  clientId  Int      @map("client_id")
+  visitId   Int      @map("visit_id")
+  amount    Int      @map("amount")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  client    Client   @relation(fields: [clientId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  visit     Visit    @relation(fields: [visitId], references: [id])
+
+  @@map("purchases")
+}
+
+model CashBackTransaction {
+  id        Int @id @default(autoincrement()) @map("id")
+  clientId  Int @map("client_id")
+  amount    Int @map("amount")
+  createdAt DateTime @map("created_at") @default(now())
+  client    Client @relation(fields: [clientId], references: [id])
+
+  @@map("cashback_transactions")
+}
+
+model Tarrif {
+  id        Int    @id @default(autoincrement()) @map("id")
+  name      String @map("name")
+  price     Int    @map("price")
+  maxClient Int    @map("max_client")
+  users     User[]
+
+  @@map("tarrifs")
+}
+
+model Visit {
+  id        Int      @id @default(autoincrement()) @map("id")
+  clientId  Int      @map("client_id")
+  visitDate DateTime @default(now()) @map("visit_date")
+  client    Client   @relation(fields: [clientId], references: [id])
+  purchase  Purchase[]
+
+  @@map("visits")
+}
+
+model Log {
+  id        Int      @id @default(autoincrement()) @map("id")
+  userId    Int      @map("user_id")
+  action    String   @map("action")
+  entity    String   @map("entity")
+  entityId  Int      @map("entity_id")
+  timeStamp DateTime @default(now()) @map("time_stamp")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("logs")
+}
