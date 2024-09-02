@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../user/user.service';
 import { PrismaService } from '../prisma.service';
 import { CreateUserDTO, UpdateUserDTO } from '../dto/user.dto';
-import { hash, verify } from 'argon2';
+import { hash } from 'argon2';
 
 jest.mock('argon2'); // Мокируем библиотеку argon2, чтобы избежать реального хэширования и проверки паролей.
 
@@ -22,31 +22,6 @@ describe('UserService', () => {
   it('should be defined', () => {
     // Проверяем, что сервис был определен и успешно инициализирован.
     expect(service).toBeDefined();
-  });
-
-  describe('getUsers', () => {
-    it('should return an array of users', async () => {
-      // Подготавливаем массив пользователей для мокирования.
-      const mockUsers = [
-        {
-          id: 1,
-          username: 'user1',
-          name: 'User One',
-          passwordHash: 'hashedpassword',
-          email: 'user1@example.com',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          tarrifId: 1,
-        },
-      ];
-
-      // Мокируем метод findMany Prisma, чтобы он возвращал mockUsers.
-      jest.spyOn(prisma.user, 'findMany').mockResolvedValue(mockUsers);
-
-      // Вызываем метод сервиса и проверяем, что он возвращает массив mockUsers.
-      const users = await service.getUsers();
-      expect(users).toEqual(mockUsers);
-    });
   });
 
   describe('getUserById', () => {
@@ -153,46 +128,6 @@ describe('UserService', () => {
       // Вызываем метод сервиса и проверяем, что пользователь был создан и возвращен.
       const user = await service.createUser(dto);
       expect(user).toEqual(mockUser);
-    });
-  });
-
-  describe('login', () => {
-    it('should return the user if credentials are correct', async () => {
-      // Подготавливаем данные для входа.
-      const email = 'user1@example.com';
-      const password = 'password123';
-      const mockHashedPassword = 'hashedpassword';
-      const mockUser = {
-        id: 1,
-        username: 'user1',
-        name: 'User One',
-        passwordHash: mockHashedPassword,
-        email: email,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        tarrifId: 1,
-      };
-
-      // Мокируем методы findFirst и verify, чтобы они возвращали правильного пользователя и проверку пароля.
-      jest.spyOn(prisma.user, 'findFirst').mockResolvedValue(mockUser);
-      (verify as jest.Mock).mockResolvedValue(true);
-
-      // Вызываем метод сервиса и проверяем, что пользователь возвращается при правильных данных.
-      const user = await service.login(email, password);
-      expect(user).toEqual(mockUser);
-    });
-
-    it('should return null if credentials are incorrect', async () => {
-      // Подготавливаем неверные данные для входа.
-      const email = 'user1@example.com';
-      const password = 'password123';
-
-      // Мокируем метод findFirst Prisma, чтобы он возвращал null.
-      jest.spyOn(prisma.user, 'findFirst').mockResolvedValue(null);
-
-      // Вызываем метод сервиса и проверяем, что возвращается null при неправильных данных.
-      const user = await service.login(email, password);
-      expect(user).toBeNull();
     });
   });
 

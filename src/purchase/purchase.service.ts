@@ -21,9 +21,16 @@ export class PurchaseService {
     userId: number,
     purchaseAmount: number,
   ) {
-    return this.prisma.$transaction(async () => {
-      const visit = await this.prisma.visit.create({ data: { clientId } });
-      const purchase = await this.prisma.purchase.create({
+    return this.prisma.$transaction(async (prisma) => {
+      const visit = await prisma.visit.create({ data: { clientId } });
+
+      const client = await prisma.client.findFirst({
+        where: { id: clientId },
+        select: { cashbackPercentage: true },
+      });
+      this.isClientExists(client);
+
+      const purchase = await prisma.purchase.create({
         data: {
           userId: userId,
           clientId: clientId,
@@ -35,17 +42,12 @@ export class PurchaseService {
         },
       });
 
-      const client = await this.prisma.client.findUnique({
-        where: { id: clientId },
-        select: { cashbackPercentage: true },
-      });
-      this.isClientExists(client);
       const cashbackAmount = this.calculateCashBack(
         purchaseAmount,
         client.cashbackPercentage,
       );
 
-      await this.prisma.cashBackTransaction.create({
+      await prisma.cashBackTransaction.create({
         data: {
           client: {
             connect: { id: clientId },
