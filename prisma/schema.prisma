@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-1.1.x", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -8,26 +9,40 @@ datasource db {
 }
 
 model User {
-  id           Int          @id @default(autoincrement())
-  username     String       @unique @map("username")
-  name         String?      @map("name")
-  passwordHash String       @map("password_hash")
-  email        String
-  createdAt    DateTime     @default(now()) @map("created_at")
-  updatedAt    DateTime     @updatedAt @map("updated_at")
-  tarrifId     Int?         @map("tarrif_id")
-  logs         Log[]
-  purchase     Purchase[]
-  roles        UserRole[]
-  tarrif       Tarrif?      @relation(fields: [tarrifId], references: [id])
-  clients      UserClient[]
+  id              Int          @id @default(autoincrement())
+  username        String       @unique @map("username")
+  name            String?      @map("name")
+  passwordHash    String       @map("password_hash")
+  email           String       @unique
+  phone           String?
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  tarrifId        Int?         @map("tarrif_id")
+  logs            Log[]
+  purchase        Purchase[]
+  roles           UserRole[]
+  tarrif          Tarrif?      @relation(fields: [tarrifId], references: [id], onDelete: NoAction)
+  clients         UserClient[]
+  createdManagers Manager[]    @relation("UserCreatedManagers")
+  managerAccounts Manager[]    @relation("UserManagerAccounts")
 
   @@map("users")
 }
 
+model Manager {
+  id            Int    @id @default(autoincrement())
+  username      String @unique
+  userCreatedId Int    @map("user_created_id")
+  userCreated   User   @relation("UserCreatedManagers", fields: [userCreatedId], references: [id])
+  userManagerId Int    @map("user_manager_id")
+  userManager   User   @relation("UserManagerAccounts", fields: [userManagerId], references: [id], onDelete: Cascade)
+
+  @@map("manager")
+}
+
 model Role {
   id          Int        @id @default(autoincrement()) @map("id")
-  roleName    String     @map("role_name") /// admin, manager, user
+  roleName    String     @map("role_name") /// user, manager, admin (1, 2, 3)
   description String?    @map("description")
   userRole    UserRole[]
 
@@ -35,36 +50,36 @@ model Role {
 }
 
 model UserRole {
-  userId Int @map("user_id")
-  roleId Int @map("role_id")
+  userId Int  @map("user_id")
+  roleId Int  @map("role_id")
   role   Role @relation(fields: [roleId], references: [id])
-  user   User @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
   @@map("user_roles")
 }
 
 model Client {
-  id                 Int          @id @default(autoincrement()) @map("id")
-  name               String?      @map("name")
-  phone              String       @map("phone")
-  email              String?      @map("email")
-  birthDate          DateTime?    @map("birth_date")
-  cashbackPercentage Int          @default(0) @map("cashback_percentage")
-  createdAt          DateTime     @default(now()) @map("created_at")
-  updatedAt          DateTime     @updatedAt @map("updated_at")
-  purchase           Purchase[]
-  userClient         UserClient[]
-  visits             Visit[]
+  id                  Int                   @id @default(autoincrement()) @map("id")
+  name                String?               @map("name")
+  phone               String                @map("phone")
+  email               String?               @map("email")
+  birthDate           DateTime?             @map("birth_date")
+  cashbackPercentage  Int                   @default(0) @map("cashback_percentage")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  purchase            Purchase[]
+  userClient          UserClient[]
+  visits              Visit[]
   cashBackTransaction CashBackTransaction[]
 
   @@map("clients")
 }
 
 model UserClient {
-  userId   Int @map("user_id")
-  clientId Int @map("client_id")
-  client   Client @relation(fields: [clientId], references: [id])
+  userId   Int    @map("user_id")
+  clientId Int    @map("client_id")
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   user     User   @relation(fields: [userId], references: [id])
 
   @@id([userId, clientId])
@@ -79,7 +94,7 @@ model Purchase {
   amount    Int      @map("amount")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  client    Client   @relation(fields: [clientId], references: [id])
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id])
   visit     Visit    @relation(fields: [visitId], references: [id])
 
@@ -87,11 +102,11 @@ model Purchase {
 }
 
 model CashBackTransaction {
-  id        Int @id @default(autoincrement()) @map("id")
-  clientId  Int @map("client_id")
-  amount    Int @map("amount")
-  createdAt DateTime @map("created_at") @default(now())
-  client    Client @relation(fields: [clientId], references: [id])
+  id        Int      @id @default(autoincrement()) @map("id")
+  clientId  Int      @map("client_id")
+  amount    Int      @map("amount")
+  createdAt DateTime @default(now()) @map("created_at")
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@map("cashback_transactions")
 }
@@ -107,10 +122,10 @@ model Tarrif {
 }
 
 model Visit {
-  id        Int      @id @default(autoincrement()) @map("id")
-  clientId  Int      @map("client_id")
-  visitDate DateTime @default(now()) @map("visit_date")
-  client    Client   @relation(fields: [clientId], references: [id])
+  id        Int        @id @default(autoincrement()) @map("id")
+  clientId  Int        @map("client_id")
+  visitDate DateTime   @default(now()) @map("visit_date")
+  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
   purchase  Purchase[]
 
   @@map("visits")

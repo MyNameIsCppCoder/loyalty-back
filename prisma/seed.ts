@@ -1,18 +1,52 @@
 import { PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import { hash } from 'argon2';
 
 const prisma = new PrismaClient();
 
 async function main() {
+
+
+
   // Создаем несколько тарифов
   await prisma.tarrif.createMany({
     data: [
-      { name: 'Basic', price: 1000, maxClient: 100 },
-      { name: 'Pro', price: 5000, maxClient: 500 },
-      { name: 'Enterprise', price: 10000, maxClient: 1000 },
+      { name: 'freemium', price: 0, maxClient: 30 },
+      { name: 'medium', price: 500, maxClient: 150 },
+      { name: 'max', price: 1000, maxClient: 1000 },
+      { name: 'admin', price: 0, maxClient: 10000 },
     ],
     skipDuplicates: true, // Если записи уже существуют, пропустите их
   });
+
+  const adminTarrif = await prisma.tarrif.findFirst({ where: {name: 'admin' } });
+
+  const admin = await prisma.user.create({
+    data: {
+      username: 'Vladimirus',
+      name: 'Vladimir',
+      email: 'kasterinvladimir@gmail.com',
+      passwordHash: await hash('443412Vova'),
+      tarrifId: adminTarrif.id,
+    },
+  });
+
+  await prisma.role.createMany({
+    data: [
+      { roleName: 'user', id: 1, description: 'Person that able to immerse with clients' },
+      { roleName: 'manager', id: 2, description: 'Person that able to immerse with clients and managers' },
+      { roleName: 'admin', id: 3, description: 'admin role' },
+    ],
+    skipDuplicates: true,
+  })
+
+  await prisma.userRole.createMany({
+    data: [
+      {userId: admin.id, roleId: 1},
+      {userId: admin.id, roleId: 3},
+    ],
+    skipDuplicates: true,
+  })
 
   const tariffIds = await prisma.tarrif.findMany({
     select: { id: true },
@@ -30,22 +64,8 @@ async function main() {
       },
     });
 
-    // Создание ролей для пользователей
-    await prisma.userRole.createMany({
-      data: [
-        {
-          userId: user.id,
-          roleId: 1, // Допустим, что 1 - это роль 'user'
-        },
-        {
-          userId: user.id,
-          roleId: faker.number.int({ min: 2, max: 3 }), // Генерируем случайную роль для пользователя
-        },
-      ],
-    });
-
     // Генерация клиентов и связанных данных для каждого пользователя
-    for (let j = 0; j < 5; j++) {
+    for (let j = 0; j < 100; j++) {
       const client = await prisma.client.create({
         data: {
           name: faker.person.fullName(),
@@ -59,7 +79,7 @@ async function main() {
       // Связывание клиентов и пользователей
       await prisma.userClient.create({
         data: {
-          userId: user.id,
+          userId: admin.id,
           clientId: client.id,
         },
       });
@@ -79,6 +99,10 @@ async function main() {
             clientId: client.id,
             visitId: visit.id,
             amount: faker.number.int({ min: 100, max: 1000 }),
+            createdAt: faker.date.between({
+              from: '2000-01-01',
+              to: Date.now(),
+            }),
           },
         });
 
@@ -86,7 +110,7 @@ async function main() {
         await prisma.cashBackTransaction.create({
           data: {
             clientId: client.id,
-            amount: faker.number.int({ min: 10, max: 100 }),
+            amount: faker.number.int({ min: 10, max: 100000 }),
           },
         });
       }

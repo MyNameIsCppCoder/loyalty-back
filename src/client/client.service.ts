@@ -24,22 +24,32 @@ export class ClientService {
   }
 
   async findByEmail(userId: number, email: string) {
-    const result = await this.prisma.client.findFirst({
+    const client = await this.prisma.client.findFirst({
       where: {
         userClient: {
           some: {
             userId,
           },
         },
-        email: email,
+        email,
       },
     });
-    console.log('Result from findByEmail:', result);
-    return result;
+    if (!client) return null;
+
+    const totalCashback = await this.prisma.cashBackTransaction.aggregate({
+      where: {
+        clientId: client.id,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    return { ...client, totalCashback: totalCashback._sum.amount || 0 };
   }
 
   async findByPhone(userId: number, phone: string) {
-    const result = await this.prisma.client.findFirst({
+    const client = await this.prisma.client.findFirst({
       where: {
         userClient: {
           some: {
@@ -49,18 +59,28 @@ export class ClientService {
         phone: phone,
       },
     });
-    console.log('Result from findByPhone:', result);
-    return result;
+
+    if (!client) return null;
+
+    const totalCashback = await this.prisma.cashBackTransaction.aggregate({
+      where: {
+        clientId: client.id, // Используем id найденного клиента
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    return {
+      ...client,
+      totalCashback: totalCashback._sum.amount || 0,
+    };
   }
 
   async findByPhoneOrEmail(userId: number, email?: string, phone?: string) {
-    console.log(`${phone} and ${email} was recived`);
-    console.log(`${typeof phone} and ${typeof email} was recived`);
     if (phone) {
-      console.log('phone search was started');
       return await this.findByPhone(userId, phone);
     } else if (email) {
-      console.log('mail search was started');
       return await this.findByEmail(userId, email);
     } else {
       throw new BadRequestException(
@@ -72,6 +92,7 @@ export class ClientService {
   async getClientById(id: number) {
     return this.prisma.client.findUnique({
       where: { id },
+      include: { cashBackTransaction: true },
     });
   }
 
@@ -112,7 +133,7 @@ export class ClientService {
       !existingClient ||
       !existingClient.userClient.some((uc) => uc.userId === userId)
     ) {
-      return new NotFoundException("User wasn't find");
+      throw new NotFoundException("User wasn't find");
     }
     return this.prisma.client.delete({
       where: {
@@ -136,8 +157,12 @@ export class ClientService {
         data: { ...dto },
       });
     } catch (error) {
+      console.log('i am in a catch');
       if (error instanceof PrismaClientKnownRequestError) {
+        console.log('i am in a PrismaClientKnownRequestError');
         if (error.code === 'P2002') {
+          console.log('i am in a P2002');
+
           throw new ConflictException(
             'A client with this email already exists',
           );
@@ -148,7 +173,7 @@ export class ClientService {
   }
 
   async getClientsByUserId(userId: number) {
-    return this.prisma.client.findMany({
+    const clients = await this.prisma.client.findMany({
       where: {
         userClient: {
           some: {
@@ -156,6 +181,24 @@ export class ClientService {
           },
         },
       },
+      include: {
+        visits: true,
+      },
     });
+    if (clients.length === 0) return null;
+    const allClientsWithCashBack = Promise.all(
+      clients.map(async (client) => {
+        const totalCashback = await this.prisma.cashBackTransaction.aggregate({
+          where: {
+            clientId: client.id,
+          },
+          _sum: {
+            amount: true,
+          },
+        });
+        return { ...client, totalCashback: totalCashback._sum.amount || 0 };
+      }),
+    );
+    return allClientsWithCashBack;
   }
 }

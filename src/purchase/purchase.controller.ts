@@ -45,6 +45,12 @@ export class PurchaseController {
     return await this.purchaseService.getPurchaseByUserId(req.user.userId);
   }
 
+  @Get('client/:id')
+  @Roles('admin', 'user', 'manager')
+  async getAllClientsPurchase(@Param('id') clientId: string) {
+    return await this.purchaseService.getAllPurchaseByClientId(+clientId);
+  }
+
   @Get('cancel/:id/')
   @Roles('admin', 'user', 'manager')
   async cancelClientPurchase(@Param('id', ParseIntPipe) purchaseId: number) {

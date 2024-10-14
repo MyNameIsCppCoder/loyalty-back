@@ -132,4 +132,17 @@ export class PurchaseService {
       return purchase;
     });
   }
+
+  async getAllPurchaseByClientId(clientId: number) {
+    const client = await this.prisma.client.findUnique({
+      where: {
+        id: clientId,
+      },
+      select: {
+        purchase: true,
+      },
+    });
+    this.isClientExists(client);
+    return client.purchase;
+  }
 }

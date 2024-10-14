@@ -15,7 +15,7 @@ export class RolesGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest();
 
-    // Здесь предполагается, что user.roles - это массив объектов, и вам нужно проверить их roleName
+
     return requiredRoles.some((role) =>
       user.role.some((userRole) => userRole.role.roleName === role),
     );

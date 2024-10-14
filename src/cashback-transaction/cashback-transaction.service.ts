@@ -17,8 +17,7 @@ export class CashbackTransactionService {
 
     if (client && client.cashBackTransaction) {
       const totalCashback = client.cashBackTransaction.reduce(
-        (acc, entity) =>
-          acc + ((entity.amount * client.cashbackPercentage) / 100 || 0),
+        (acc, entity) => acc + entity.amount * client.cashbackPercentage,
         0,
       );
       if (this.validateTransaction(amount, totalCashback))

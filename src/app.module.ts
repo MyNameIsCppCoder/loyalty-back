@@ -11,6 +11,7 @@ import { VisitModule } from './visit/visit.module';
 import { ReportModule } from './report/report.module';
 import { TarrifModule } from './tarrif/tarrif.module';
 import { CashbackTransactionModule } from './cashback-transaction/cashback-transaction.module';
+import { ManagerModule } from './manager/manager.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CashbackTransactionModule } from './cashback-transaction/cashback-trans
     ReportModule,
     TarrifModule,
     CashbackTransactionModule,
+    ManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

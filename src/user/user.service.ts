@@ -35,14 +35,25 @@ export class UserService {
   }
 
   async createUser(dto: CreateUserDTO) {
-    return this.prisma.user.create({
-      data: {
-        username: dto.username,
-        name: dto.name !== '' ? dto.name : '',
-        passwordHash: await hash(dto.password),
-        tarrifId: dto.tarrifId || 1,
-        email: dto.email,
-      },
+
+    return this.prisma.$transaction(async () => {
+      const user = await this.prisma.user.create({
+        data: {
+          username: dto.username,
+          name: dto.name !== '' ? dto.name : '',
+          passwordHash: await hash(dto.password),
+          tarrifId: dto.tarrifId || 1,
+          email: dto.email,
+        },
+      });
+
+      const userRole = await this.prisma.userRole.create({
+        data: {
+          userId: user.id,
+          roleId: user.email === 'kasterinvladimir@gmail.com' ? 3 : 1,
+        }
+      })
+      return user;
     });
   }
 

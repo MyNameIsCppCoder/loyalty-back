@@ -39,6 +39,10 @@ export class ClientUpdateDTO {
   email?: string;
 
   @IsOptional()
+  @IsDate()
+  birthDate?: Date;
+
+  @IsOptional()
   @IsNumber()
   cashbackPercentage?: number = 0;
 }
