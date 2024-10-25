@@ -25,9 +25,9 @@ export class AuthController {
     @Body() dto: LoginUserDTO,
     @Res({ passthrough: true }) res: Response,
   ) {
-      const { email, password } = dto;
-      const accessToken = await this.authService.login(email, password, res);
-      return { accessToken };
+    const { email, password } = dto;
+    const accessToken = await this.authService.login(email, password, res);
+    return { accessToken };
   }
 
   @Get('cookie')
@@ -58,5 +58,11 @@ export class AuthController {
   @UseGuards(JwtAuth)
   async checkToken() {
     return { message: 'token is valid' };
+  }
+
+  @Post('check-pass')
+  @UseGuards(JwtAuth)
+  async checkPass(@Body() password: string, @Req() req: any) {
+    return await this.authService.comparePass(password, +req.user.userId);
   }
 }

@@ -3,6 +3,7 @@ import {
   Get,
   ParseIntPipe,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { CashbackTransactionService } from './cashback-transaction.service';
@@ -22,7 +23,8 @@ export class CashbackTransactionController {
   async payBonus(
     @Query('id', ParseIntPipe) clientId: number,
     @Query('amount', ParseIntPipe) amount: number,
+    @Req() req: any,
   ) {
-    return await this.cashbackTransactionService.payByBonus(clientId, amount);
+    return await this.cashbackTransactionService.payByBonus(clientId, amount, +req.user.userId);
   }
 }

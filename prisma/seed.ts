@@ -5,21 +5,20 @@ import { hash } from 'argon2';
 const prisma = new PrismaClient();
 
 async function main() {
-
-
-
   // Создаем несколько тарифов
   await prisma.tarrif.createMany({
     data: [
-      { name: 'freemium', price: 0, maxClient: 30 },
-      { name: 'medium', price: 500, maxClient: 150 },
-      { name: 'max', price: 1000, maxClient: 1000 },
-      { name: 'admin', price: 0, maxClient: 10000 },
+      { name: 'freemium', price: 0, maxClient: 30, id: 1 },
+      { name: 'medium', price: 500, maxClient: 150, id: 2 },
+      { name: 'max', price: 1000, maxClient: 1000, id: 3 },
+      { name: 'admin', price: 0, maxClient: 10000, id: 4 },
     ],
-    skipDuplicates: true, // Если записи уже существуют, пропустите их
+    skipDuplicates: true,
   });
 
-  const adminTarrif = await prisma.tarrif.findFirst({ where: {name: 'admin' } });
+  const adminTarrif = await prisma.tarrif.findFirst({
+    where: { name: 'admin' },
+  });
 
   const admin = await prisma.user.create({
     data: {
@@ -33,20 +32,28 @@ async function main() {
 
   await prisma.role.createMany({
     data: [
-      { roleName: 'user', id: 1, description: 'Person that able to immerse with clients' },
-      { roleName: 'manager', id: 2, description: 'Person that able to immerse with clients and managers' },
+      {
+        roleName: 'user',
+        id: 1,
+        description: 'Person that able to immerse with clients',
+      },
+      {
+        roleName: 'manager',
+        id: 2,
+        description: 'Person that able to immerse with clients and managers',
+      },
       { roleName: 'admin', id: 3, description: 'admin role' },
     ],
     skipDuplicates: true,
-  })
+  });
 
   await prisma.userRole.createMany({
     data: [
-      {userId: admin.id, roleId: 1},
-      {userId: admin.id, roleId: 3},
+      { userId: admin.id, roleId: 1 },
+      { userId: admin.id, roleId: 3 },
     ],
     skipDuplicates: true,
-  })
+  });
 
   const tariffIds = await prisma.tarrif.findMany({
     select: { id: true },

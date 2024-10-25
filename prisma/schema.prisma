@@ -27,6 +27,7 @@ model User {
   managerAccounts Manager[]    @relation("UserManagerAccounts")
 
   @@map("users")
+  Bank Bank[]
 }
 
 model Manager {
@@ -136,9 +137,23 @@ model Log {
   userId    Int      @map("user_id")
   action    String   @map("action")
   entity    String   @map("entity")
-  entityId  Int      @map("entity_id")
+  entityId  Int      @map("entity_id") // in a case with subscribe means count
   timeStamp DateTime @default(now()) @map("time_stamp")
   user      User     @relation(fields: [userId], references: [id])
 
   @@map("logs")
+}
+
+
+model Bank {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+  amount Int
+  createdAt DateTime @default(now()) @map("created_at")
+  user User @relation(fields: [userId], references: [id])
+  isSuccess Int @default(0) @map("is_success")/// 0 - no, 1 - yes 
+  countMonth Int? @default(1) @map("count_month")
+  expiresAt DateTime? @map("expires_at")
+
+  @@map("bank")
 }

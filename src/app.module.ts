@@ -12,6 +12,10 @@ import { ReportModule } from './report/report.module';
 import { TarrifModule } from './tarrif/tarrif.module';
 import { CashbackTransactionModule } from './cashback-transaction/cashback-transaction.module';
 import { ManagerModule } from './manager/manager.module';
+import { MailModule } from './mail/mail.module';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { BankModule } from './bank/bank.module';
+import { LoggingModule } from './logging/logging.module';
 
 @Module({
   imports: [
@@ -29,6 +33,19 @@ import { ManagerModule } from './manager/manager.module';
     TarrifModule,
     CashbackTransactionModule,
     ManagerModule,
+    MailModule,
+    MailerModule.forRoot({
+      transport: {
+        host: process.env.MAIL_HOST,
+        port: Number(process.env.MAIL_PORT),
+        auth: {
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PASS,
+        },
+      },
+    }),
+    BankModule,
+    LoggingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

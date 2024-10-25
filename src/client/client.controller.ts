@@ -9,6 +9,7 @@ import {
   Delete,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ClientService } from './client.service';
 import { JwtAuth } from '../guards/authGuar.jwt';
@@ -64,8 +65,13 @@ export class ClientController {
   async updateClientInfo(
     @Body() dto: ClientUpdateDTO,
     @Param('id') clientId: string,
+    @Req() req: any,
   ) {
-    return await this.clientService.updateClient(dto, +clientId);
+    return await this.clientService.updateClient(
+      dto,
+      +clientId,
+      +req.user.userId,
+    );
   }
 
   @Get('show/')

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { hash } from 'argon2';
 import { PrismaService } from '../prisma.service';
 import { CreateUserDTO, UpdateUserDTO } from '../dto/user.dto';
@@ -7,12 +7,15 @@ import { CreateUserDTO, UpdateUserDTO } from '../dto/user.dto';
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  getUserById(id: number) {
-    return this.prisma.user.findUnique({
-      where: {
-        id,
-      },
+  async getUserById(id: number) {
+    console.log('Полученный id:', id);
+    const user = await this.prisma.user.findUnique({
+      where: { id },
     });
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return user;
   }
 
   getUserByEmail(email: string) {
@@ -35,7 +38,6 @@ export class UserService {
   }
 
   async createUser(dto: CreateUserDTO) {
-
     return this.prisma.$transaction(async () => {
       const user = await this.prisma.user.create({
         data: {
@@ -47,12 +49,12 @@ export class UserService {
         },
       });
 
-      const userRole = await this.prisma.userRole.create({
+      await this.prisma.userRole.create({
         data: {
           userId: user.id,
           roleId: user.email === 'kasterinvladimir@gmail.com' ? 3 : 1,
-        }
-      })
+        },
+      });
       return user;
     });
   }
@@ -79,5 +81,16 @@ export class UserService {
 
   getAllUsers() {
     return this.prisma.user.findMany();
+  }
+
+  getUserProfileById(id: number) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        name: true,
+        email: true,
+        username: true,
+      },
+    });
   }
 }

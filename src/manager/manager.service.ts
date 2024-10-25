@@ -67,7 +67,6 @@ export class ManagerService {
       console.log(managerIds[k])
       userManagersEntity.push(await this.prisma.user.findUnique({where: {id: managerIds[k]}}))
     }
-    console.log(userManagersEntity)
     const userManagers = []
     for (let k = 0; k < managerIds.length - 1; k++) {
       userManagers.push({ ...managers, ...userManagersEntity })

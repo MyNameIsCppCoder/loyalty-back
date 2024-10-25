@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { verify } from 'argon2';
+import { hash, verify } from 'argon2';
 import { Request, Response } from 'express';
 import { PrismaService } from 'src/prisma.service';
 
@@ -113,6 +113,19 @@ export class AuthService {
       this.deleteTokenFromCookie(res);
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  async comparePass(password: string, id: number) {
+    const user = await this.findUserById(id);
+    await this.validateUser(user);
+    const isPasswordValid = await this.verifyPassword(
+      user.passwordHash,
+      await hash(password),
+    );
+    if (!isPasswordValid) {
+      throw new NotFoundException('Incorrect password');
+    }
+    return user;
   }
 
   async login(email: string, password: string, res: Response) {

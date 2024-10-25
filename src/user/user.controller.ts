@@ -42,7 +42,7 @@ export class UserController {
   }
 
   @UseGuards(JwtAuth, RolesGuard)
-  @Get(':id/')
+  @Get(':id(\\d+)')
   async getUserById(@Param('id') id: string) {
     return await this.userService.getUserById(+id);
   }
@@ -65,5 +65,20 @@ export class UserController {
   @Delete(':id/')
   async deleteUser(@Param('id') id: string) {
     return await this.userService.deleteUser(+id);
+  }
+
+  @UseGuards(JwtAuth, RolesGuard)
+  @Roles('admin', 'manager', 'user')
+  @Get('find/')
+  async getUser(@Req() req: any) {
+    console.log('user id is: ', req.user.userId);
+    return await this.userService.getUserById(+req.user.userId);
+  }
+
+  @UseGuards(JwtAuth, RolesGuard)
+  @Roles('admin', 'manager', 'user')
+  @Get('profile')
+  async getProfile(@Req() req: any) {
+    return await this.userService.getUserProfileById(+req.user.userId);
   }
 }
