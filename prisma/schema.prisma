@@ -25,9 +25,9 @@ model User {
   clients         UserClient[]
   createdManagers Manager[]    @relation("UserCreatedManagers")
   managerAccounts Manager[]    @relation("UserManagerAccounts")
+  Bank Bank[]
 
   @@map("users")
-  Bank Bank[]
 }
 
 model Manager {
